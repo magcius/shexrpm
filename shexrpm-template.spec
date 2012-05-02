@@ -11,14 +11,12 @@ Source0:        %{extension_download_url}
 %description
 %{extension_description}
 
-%prep
-%setup -q -n %{extension_uuid}
-
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_datadir}/gnome-shell/extensions/%{extension_uuid}
-install -Dp -m 0644 %{cert_file} * %{buildroot}%{_datadir}/gnome-shell/extensions/%{uuid}/
+chmod -R 0667 %{buildroot}%{_datadir}/gnome-shell/extensions/%{extension_uuid}
+cp -r --preserve=mode %{buildroot}%{_datadir}/gnome-shell/extensions/%{extension_uuid}/
 
 %files
 %defattr(-,root,root,-)
-%{_datadir}/gnome-shell/extensions/%{extension_uuid}
+%{_datadir}/gnome-shell/extensions/%{extension_uuid}/
