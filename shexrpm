@@ -1,0 +1,60 @@
+#!/usr/bin/python
+
+import json
+import requests
+import subprocess
+import urlparse
+
+REPOSITORY = "https://extensions.gnome.org/"
+
+def scrape_shell_version():
+    p = subprocess.Popen(['gnome-shell', '--version'], stdout=subprocess.PIPE)
+    ver_string = p.stdout.read().strip()
+    if ver_string.startswith('GNOME Shell '):
+        ver_string = ver_string[len('GNOME Shell '):]
+
+    return ver_string
+
+def grab_extension_info(uuid):
+    shell_version = scrape_shell_version()
+    req = requests.get(REPOSITORY + '/extension-info/', params=dict(uuid=uuid, shell_version=shell_version))
+    req.raise_for_status()
+    return json.loads(req.text)
+
+def download_extension(info):
+    download_url = info['download_url']
+    req = requests.get(REPOSITORY + download_url)
+    req.raise_for_status()
+    left, slash, filename = download_url.rpartition('/')
+    filename = filename.replace('@', '_')
+    f = open(filename,'wb')
+    f.write(req.content)
+    f.close()
+
+def build_rpm_environment(info):
+    environment = {}
+
+    for key, value in info.iteritems():
+        value = str(value)
+        value = value.replace('@', '_') # '@' not allowed in values
+        environment['extension_%s' % (key,)] = value
+
+    environment['_rpmdir'] = '.'
+    environment['_builddir'] = '.' 
+    environment['_sourcedir'] = '.'
+    return environment
+
+def build_rpm(environment):
+    params = ['rpmbuild', '-ba', 'shexrpm-template.spec']
+    for key, value in environment.iteritems():
+        params.append('-D')
+        params.append('%s %s' % (key, value))
+    p = subprocess.Popen(params)
+    p.wait()
+
+def main(uuid):
+    info = grab_extension_info(uuid)
+    download_extension(info)
+    build_rpm(build_rpm_environment(info))
+
+main("alternative-status-menu@gnome-shell-extensions.gcampax.github.com")
