@@ -20,9 +20,22 @@ def grab_rpm_sourcedir():
     p = subprocess.Popen(['rpmbuild', '--quiet', '-E', '%{_sourcedir}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return p.stdout.read().strip()
 
-def grab_extension_info(uuid):
-    shell_version = grab_shell_version()
-    req = requests.get(REPOSITORY + '/extension-info/', params=dict(uuid=uuid, shell_version=shell_version))
+def grab_extension_query(arg):
+    try:
+        return dict(pk=int(arg, 10))
+    except ValueError:
+        pass
+
+    components = urlparse.urlparse(arg)
+    if components.netloc == 'extensions.gnome.org' and path.startswith('/extensions/'):
+        parts = path.strip('/').split('/')
+        return dict(uuid=parts[2])
+
+    return dict(uuid=arg)
+
+def grab_extension_info(args):
+    args.update(shell_version=grab_shell_version())
+    req = requests.get(REPOSITORY + '/extension-info/', params=args)
     req.raise_for_status()
     return json.loads(req.text)
 
@@ -53,10 +66,12 @@ def build_rpm(environment):
     p = subprocess.Popen(params)
     p.wait()
 
-def main(uuid):
-    info = grab_extension_info(uuid)
+def main(arg):
+    args = grab_extension_query(arg)
+    info = grab_extension_info(args)
     download_extension(info)
     build_rpm(build_rpm_environment(info))
 
 if __name__ == "__main__":
-    main(sys.argv[0])
+    import sys
+    main(sys.argv[1])
