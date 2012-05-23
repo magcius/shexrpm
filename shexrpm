@@ -27,9 +27,9 @@ def grab_extension_query(arg):
         pass
 
     components = urlparse.urlparse(arg)
-    if components.netloc == 'extensions.gnome.org' and path.startswith('/extensions/'):
-        parts = path.strip('/').split('/')
-        return dict(uuid=parts[2])
+    if components.netloc == 'extensions.gnome.org' and components.path.startswith('/extension/'):
+        parts = components.path.strip('/').split('/')
+        return dict(pk=parts[1])
 
     return dict(uuid=arg)
 
