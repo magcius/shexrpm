@@ -11,11 +11,13 @@ Source0:        %{extension_download_url}
 %description
 %{extension_description}
 
+%prep
+%setup -c extension
+
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}%{_datadir}/gnome-shell/extensions/%{extension_uuid}
-chmod -R 0667 %{buildroot}%{_datadir}/gnome-shell/extensions/%{extension_uuid}
-cp -r --preserve=mode %{buildroot}%{_datadir}/gnome-shell/extensions/%{extension_uuid}/
+mkdir -p %{buildroot}%{_datadir}/gnome-shell/extensions/%{extension_uuid}/
+find . -type f -exec install -m 0644 {} %{buildroot}%{_datadir}/gnome-shell/extensions/%{extension_uuid}/ \;
 
 %files
 %defattr(-,root,root,-)
